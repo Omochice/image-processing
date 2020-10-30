@@ -96,3 +96,10 @@ tags
 *.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/VScode
+
+
+# user settings
+lips/*
+img/*.pnm
+*.pnm
+*.dat
