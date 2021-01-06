@@ -37,11 +37,12 @@ program read_file
   call display_img(transpose(output_img), pnm_type, img_width, img_height, img_depth)
 
   print *, "laplasian"
-  call lapf01(img_array, output_img, img_width, img_height, img_width, img_height)
+!   call lapf01(img_array, output_img, img_width, img_height, img_width, img_height)
+  call laplacian(img_array, output_img, img_width, img_height)
   call display_img(transpose(output_img), pnm_type, img_width, img_height, img_depth)
 
-  print *, "edge"
-  call egrb(img_array, output_img, img_width, img_height, 1)
-  call display_img(transpose(output_img), pnm_type, img_width, img_height, img_depth)
+!   print *, "edge"
+!   call egrb(img_array, output_img, img_width, img_height, 1)
+!   call display_img(transpose(output_img), pnm_type, img_width, img_height, img_depth)
 
 end program
