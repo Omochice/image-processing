@@ -104,3 +104,4 @@ lips/*
 img/*.pnm
 *.pnm
 *.dat
+*.pgm
