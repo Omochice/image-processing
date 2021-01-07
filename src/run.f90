@@ -1,4 +1,6 @@
 program read_file
+  use filtering
+  use pnm_tools
   implicit none    !未宣言変数の使用禁止
   character(len=100) :: filename
   character(len=2) :: pnm_type
@@ -30,19 +32,20 @@ program read_file
   close (10)
 
 
-  call display_img(transpose(img_array), pnm_type, img_width, img_height, img_depth)
+  call display_img(transpose(img_array), pnm_type, img_depth)
 
   print *, "noise rejection"
   call ITEN1(img_array, output_img, output_img, img_width, img_height, 3)
-  call display_img(transpose(output_img), pnm_type, img_width, img_height, img_depth)
+  call display_img(transpose(output_img), pnm_type, img_depth)
 
   print *, "laplasian"
 !   call lapf01(img_array, output_img, img_width, img_height, img_width, img_height)
-  call laplacian(img_array, output_img, img_width, img_height)
-  call display_img(transpose(output_img), pnm_type, img_width, img_height, img_depth)
+  print *, shape(img_array)
+  call laplacian(img_array, output_img, img_depth)
+  call display_img(transpose(output_img), pnm_type, img_depth)
 
-!   print *, "edge"
-!   call egrb(img_array, output_img, img_width, img_height, 1)
-!   call display_img(transpose(output_img), pnm_type, img_width, img_height, img_depth)
+  print *, "edge"
+  call egrb(img_array, output_img, img_width, img_height, 1)
+  call display_img(transpose(output_img), pnm_type, img_depth)
 
 end program
