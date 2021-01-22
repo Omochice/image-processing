@@ -23,8 +23,8 @@ contains
     height = img_shape(1)
     width = img_shape(2)
 
-    do h = 1, height
-      do w = 1, width
+    do h = 1, width
+      do w = 1, height 
         if (w == 1 .or. w == width .or. h == 1 .or. h == height) then
           output(h, w) = img(h, w)
         else
@@ -57,8 +57,8 @@ contains
     height = img_shape(1)
     width = img_shape(2)
 
-    do h = 1, height
-      do w = 1, width
+    do h = 1, width 
+      do w = 1, height 
         if (w < 3 .or. w > width - 1 .or. h < 3 .or. h > height - 1) then
           output(h, w) = img(h, w)
         else
