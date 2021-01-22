@@ -40,8 +40,11 @@ program read_file
 
   print *, "laplasian"
 !   call lapf01(img_array, output_img, img_width, img_height, img_width, img_height)
-  print *, shape(img_array)
   call laplacian(img_array, output_img, img_depth)
+  call display_img(transpose(output_img), pnm_type, img_depth)
+
+  print *, "gaussian"
+  call gaussian(img_array, output_img, img_depth)
   call display_img(transpose(output_img), pnm_type, img_depth)
 
   print *, "edge"
