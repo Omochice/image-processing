@@ -19,7 +19,7 @@ program read_file
   read (10, *, iostat=iostatus) img_depth
   print *, "img configs..."
   print *, "format: ", pnm_type
-  print *, "w, h: ", img_width, img_height 
+  print *, "w, h: ", img_width, img_height
 
   allocate (img_array(img_width, img_height))
   allocate (output_img(img_width, img_height))
@@ -31,24 +31,26 @@ program read_file
   end do
   close (10)
 
-
   call display_img(transpose(img_array), pnm_type, img_depth)
 
-  print *, "noise rejection"
-  call ITEN1(img_array, output_img, output_img, img_width, img_height, 3)
-  call display_img(transpose(output_img), pnm_type, img_depth)
+!   print *, "noise rejection"
+!   call ITEN1(img_array, output_img, output_img, img_width, img_height, 3)
+!   call display_img(transpose(output_img), pnm_type, img_depth)
 
-  print *, "laplasian"
-!   call lapf01(img_array, output_img, img_width, img_height, img_width, img_height)
-  call laplacian(img_array, output_img, img_depth)
-  call display_img(transpose(output_img), pnm_type, img_depth)
+!   print *, "laplasian"
+! !   call lapf01(img_array, output_img, img_width, img_height, img_width, img_height)
+!   call laplacian(img_array, output_img)
+!   call display_img(transpose(output_img), pnm_type, img_depth)
 
-  print *, "gaussian"
-  call gaussian(img_array, output_img, img_depth)
-  call display_img(transpose(output_img), pnm_type, img_depth)
+!   print *, "gaussian"
+  call gaussian(img_array, output_img)
+!   call display_img(transpose(output_img), pnm_type, img_depth)
 
   print *, "sobel"
-  call egsb2(output_img, workspace, img_array, img_width,img_height, 1)
+!   call egsb2(output_img, workspace, img_array, img_width, img_height, 1)
+!   call display_img(transpose(workspace), pnm_type, img_depth)
+
+  call sobel(output_img, workspace)
   call display_img(transpose(workspace), pnm_type, img_depth)
 
 !   print *, "edge"

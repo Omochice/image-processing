@@ -1,5 +1,7 @@
 module filtering
+  use mod_queue
   implicit none
+  real(8), parameter :: PI = 4*atan(1.0_8)
 
 contains
   recursive subroutine fill_edge(img, n_around)
@@ -125,23 +127,22 @@ contains
     integer, intent(inout), dimension(:, :) ::  output
     integer, intent(in), optional ::depth
 
-    real, allocatable, dimension(:, :) :: workspace
+    real, allocatable, dimension(:, :) :: edge_directions
     integer, parameter, dimension(3, 3) :: filter_x = reshape((/-1, 0, 1, &
                                                                 -2, 0, 2, &
                                                                 -1, 0, 1/), shape(filter_x))
     integer, parameter, dimension(3, 3) :: filter_y = reshape((/-1, -2, -1, &
                                                                 0, 0, 0, &
                                                                 1, 2, 1/), shape(filter_y))
-    real(8), parameter :: PI = 4*atan(1.0_8)
-    integer, dimension(2) :: img_shape
-    integer :: width, height, w, h, d
+    ! real(8), parameter :: PI = 4*atan(1.0_8)
+    integer :: width, height, w, h, d, img_shape(2)
     real :: sx, sy
 
     img_shape = shape(img)
     height = img_shape(1)
     width = img_shape(2)
 
-    allocate (workspace(height, width))
+    allocate (edge_directions(height, width))
 
     if (present(depth)) then
       d = depth
@@ -149,25 +150,142 @@ contains
       d = 255
     end if
 
-    workspace = 0.0
+    output = 0
+    edge_directions = 0.0
     do w = 2, width - 1
       do h = 2, height - 1
         sx = sum(img(h - 1:h + 1, w - 1:w + 1)*filter_x)
         sy = sum(img(h - 1:h + 1, w - 1:w + 1)*filter_y)
         output(h, w) = max(0, min(d, int(sqrt(sx**2 + sy**2))))
         ! if (sx /= 0.0) then
-        !     output(h, w) = atan2(sy, sx)
+        !   edge_directions(h, w) = atan2(sy, sx)
         ! else if (sy < 0.0) then
-        !     output(h, w) = -1 * (PI /2)
+        !   edge_directions(h, w) = -1*(PI/2)
         ! else if (sy == 0.0) then
-        !     output(h, w) = 0
+        !   edge_directions(h, w) = 0
         ! else if (sy > 0.0) then
-        !     output(h, w) = PI /2
+        !   edge_directions(h, w) = PI/2
         ! end if
+        if (sx == 0.0 .and. sy == 0.0) then
+          edge_directions = 0
+        else
+          edge_directions(h, w) = atan2(sy, sx)
+        end if
       end do
     end do
     call fill_edge(output, 1)
+    call non_maximun_supperssion(output, edge_directions)
+    ! call hysteresis(output)
+
   end subroutine sobel
+
+  subroutine non_maximun_supperssion(edge_magnitudes, edge_ways)
+    !!! Perform non-maximum_supperssin
+    !!!
+    !!! inputs:
+    !!!   edge_magnitudes(integer, 2D): edge magnitude array
+    !!!   edge_ways(real, 2D): edge directions array
+
+    implicit none
+    integer, intent(inout), dimension(:, :) :: edge_magnitudes
+    real, intent(in), dimension(:, :) :: edge_ways
+    integer, allocatable, dimension(:, :) :: tmp_image
+    integer :: width, height, w, h, img_shape(2)
+    real :: way, edges(3)
+    ! real(8), parameter :: PI = 4*atan(1.0_8)
+
+    img_shape = shape(edge_magnitudes)
+    height = img_shape(1)
+    width = img_shape(2)
+
+    allocate (tmp_image(height, width))
+    tmp_image = 0
+
+    do w = 2, width - 1
+      do h = 2, height - 1
+        way = edge_ways(h, w)
+        ! if (edge_way >= -1*PI/8 .and. edge_way < PI/8) then
+        !   edges = edge_magnitudes(h, w - 1:w + 1)
+        ! else if (edge_way >= PI/8 .and. edge_way < 3*PI/8) then
+        !   edges = (/edge_magnitudes(h + 1, w - 1), edge_magnitudes(h, w), edge_magnitudes(h - 1, w + 1)/)
+        ! else if (edge_way >= 3*PI/8 .or. edge_way < -3*PI/8) then
+        !   edges = edge_magnitudes(h - 1:h + 1, w)
+        ! else
+        !   edges = (/edge_magnitudes(h - 1, w - 1), edge_magnitudes(h, w), edge_magnitudes(h + 1, w + 1)/)
+        ! end if
+        if ((way >= -1*PI/8 .and. way < PI/8) .or. (way < -7*PI/8 .or. way >= 7*PI/8)) then
+          edges = edge_magnitudes(h - 1:h + 1, w)
+        else if ((way >= PI/8 .and. way < 3*PI/8) .or. (way >= -7*PI/8 .and. way < -5*PI/8)) then
+          edges = (/edge_magnitudes(h - 1, w - 1), edge_magnitudes(h, w), edge_magnitudes(h + 1, w + 1)/)
+        else if ((way >= 3*PI/8 .and. way < 5*PI/8) .or. (way >= -5*PI/8 .and. way < -3*PI/8)) then
+          edges = edge_magnitudes(h, w - 1:w + 1)
+        else
+          edges = (/edge_magnitudes(h + 1, w - 1), edge_magnitudes(h, w), edge_magnitudes(h - 1, w + 1)/)
+        end if
+
+        if (edge_magnitudes(h, w) /= maxval(edges)) then
+          ! edge_magnitudes(h, w) = 0
+          tmp_image(h, w) = 0
+        else
+          tmp_image(h, w) = edge_magnitudes(h, w)
+        end if
+      end do
+    end do
+    edge_magnitudes(:, :) = tmp_image
+  end subroutine non_maximun_supperssion
+
+  subroutine hysteresis(img, depth)
+    implicit none
+    integer, intent(inout), dimension(:, :) :: img
+    integer, intent(in), optional :: depth
+    type(t_queue) :: queue
+    integer :: w, h, width, height, hys_low, hys_high, img_shape(2), d
+    integer ::dw, dh
+
+    hys_low = 0
+    hys_high = 100
+    img_shape = shape(img)
+    height = img_shape(1)
+    width = img_shape(2)
+
+    if (present(depth)) then
+      d = depth
+    else
+      d = 255
+    end if
+
+    do w = 1, width
+      do h = 1, height
+        if (img(h, w) < hys_low) then
+          img(h, w) = 0
+        else if (img(h, w) >= hys_high) then
+          img(h, w) = d
+          call enqueue(queue, h)
+          call enqueue(queue, w)
+        end if
+      end do
+    end do
+
+    do while (queue%num > 0)
+      h = dequeue(queue)
+      w = dequeue(queue)
+      do dw = -1, 1
+        do dh = -1, 1
+          if (dw == 0 .and. dh == 0) then
+            ! center is not target
+          else if (h + dh < 1 .or. h + dh > height .or. w + dw < 1 .or. w + dw > width) then
+            ! the index is out of img array
+          else if (img(h + dh, w + dw) == 0 .or. img(h + dh, w + dw) == d) then
+            ! the pix is not edge
+          else
+            img(h + dh, w + dw) = d
+            call enqueue(queue, h + dh)
+            call enqueue(queue, w + dw)
+          end if
+        end do
+      end do
+    end do
+  end subroutine hysteresis
 
 end module filtering
 

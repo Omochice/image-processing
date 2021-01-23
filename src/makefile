@@ -3,7 +3,7 @@ FC = gfortran
 LIPS = ../lips/*.o
 SP = ../lips/spider.a
 # LIBS = save_pnm.o display_img.o laplacian.o
-LIBS = pnm_tools.o filtering.o
+LIBS = pnm_tools.o filtering.o deque.o
 
 main: $(LIBS)
 	$(FC) run.f90 $(LIPS) $(SP) $(LIBS) -o run 
