@@ -103,13 +103,9 @@ contains
       d = 255
     end if
 
-    do w = 1, width
-      do h = 1, height
-        if (w < 3 .or. w > width - 1 .or. h < 3 .or. h > height - 1) then
-          output(h, w) = img(h, w)
-        else
-          output(h, w) = max(0, min(d, sum(img(h - 2:h + 2, w - 2:w + 2)*filter/256)), 0)
-        end if
+    do w = 3, width - 2
+      do h = 3, height - 2
+        output(h, w) = max(0, min(d, sum(img(h - 2:h + 2, w - 2:w + 2)*filter/256)), 0)
       end do
     end do
     call fill_edge(output, 2)
@@ -172,17 +168,17 @@ contains
       call hysteresis(output)
     end if
 
-    deallocate(edge_directions)
+    deallocate (edge_directions)
   end subroutine sobel
 
   subroutine canny_edge_detection(img, output)
-  !!! apply canny edge detection 
-  !!! the method is 
-  !!! 1. apply gaussian filtering 
+  !!! apply canny edge detection
+  !!! the method is
+  !!! 1. apply gaussian filtering
   !!! 2. apply sobel filtering
   !!! 3. non-maximum supperssion
   !!! 4. edge tracking by hysteresis
-  !!! 
+  !!!
   !!! inputs:
   !!!   img(integer, 2D): image array
   !!!   output(integer, 2D): output array
@@ -301,5 +297,45 @@ contains
     end do
   end subroutine hysteresis
 
+  subroutine bilateral(img, output, sigma)
+  !!! apply bilateral filter
+  !!!
+  !!! inputs:
+  !!!   img(integer, 2D): image array.
+  !!!   output(integer, 2D): ouput array.
+  !!!   sigma(real): use in gaussian distribution.
+
+    implicit none
+    integer, intent(in), dimension(:, :) :: img
+    integer, intent(out), dimension(:, :) :: output
+    real, intent(in) :: sigma
+    integer :: i, w, h, width, height, center, img_shape(2), window(5, 5)
+    real :: gaussian_dist(0:255), tmp_array(25), weighted_filter(5, 5)
+    real, parameter, dimension(5, 5) :: filter = reshape((/1, 4, 6, 4, 1, &
+                                                           4, 16, 24, 16, 4, &
+                                                           6, 24, 36, 24, 6, &
+                                                           4, 16, 24, 16, 4, &
+                                                           1, 4, 6, 4, 1/), shape(filter))
+
+    img_shape = shape(img)
+    height = img_shape(1)
+    width = img_shape(2)
+
+    gaussian_dist = (/(exp(-(real(i)/255)**2/(2*sigma**2)), i=0, 255)/)
+
+    do w = 3, width - 2
+      do h = 3, height - 2
+        window = img(h - 2:h + 2, w - 2:w + 2)
+        center = img(h, w)
+        tmp_array = reshape(abs(window - center), shape(tmp_array))
+        tmp_array = (/(gaussian_dist(int(tmp_array(i))), i=1, size(tmp_array))/)
+        weighted_filter = filter*reshape(tmp_array, shape(filter))
+        output(h, w) = max(0, min(255, &
+                                  nint(sum(window*weighted_filter)/sum(weighted_filter)) &
+                                  ))
+      end do
+    end do
+    call fill_edge(output, 2)
+  end subroutine bilateral
 end module filtering
 
