@@ -9,7 +9,7 @@ program read_file
   integer :: iostatus = 1
   integer, allocatable :: img_array(:, :)
   integer, allocatable :: output_img(:, :)
-  integer, allocatable :: workspace(:, :)
+  integer, allocatable :: tmp(:, :)
 
   call get_command_argument(1, filename)
 ! <-- load pnm -->
@@ -23,7 +23,7 @@ program read_file
 
   allocate (img_array(img_width, img_height))
   allocate (output_img(img_width, img_height))
-  allocate (workspace(img_width, img_height))
+  allocate (tmp(img_width, img_height))
 
   do i = 1, img_height
     read (10, *, iostat=iostatus) img_array(:, i)
@@ -50,8 +50,9 @@ program read_file
 !   call egsb2(output_img, workspace, img_array, img_width, img_height, 1)
 !   call display_img(transpose(workspace), pnm_type, img_depth)
 
-  call sobel(output_img, workspace)
-  call display_img(transpose(workspace), pnm_type, img_depth)
+!   call canny_edge_detection(output_img, tmp)
+  call sobel(output_img, tmp)
+  call display_img(transpose(tmp), pnm_type, img_depth)
 
 !   print *, "edge"
 !   call egrb(img_array, output_img, img_width, img_height, 1)
