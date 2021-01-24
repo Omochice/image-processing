@@ -115,17 +115,19 @@ contains
     call fill_edge(output, 2)
   end subroutine gaussian
 
-  subroutine sobel(img, output, depth)
+  subroutine sobel(img, output, depth, is_canny)
   !!! sobel filter (sqrt version)
   !!! input:
   !!!   img(integer, 2D): input image.
   !!!   output(integer, 2d): output image.
   !!!   depth(integer, optional): max value of a pix. default to 255
+  !!!   is_canny(logocal, optional): is used in canny adge detection
 
     implicit none
     integer, intent(in), dimension(:, :) :: img
     integer, intent(inout), dimension(:, :) ::  output
     integer, intent(in), optional ::depth
+    logical, intent(in), optional :: is_canny
 
     real, allocatable, dimension(:, :) :: edge_directions
     integer, parameter, dimension(3, 3) :: kernel_x = reshape((/-1, -2, -1, &
@@ -164,15 +166,39 @@ contains
       end do
     end do
     call fill_edge(output, 1)
-    call non_maximun_supperssion(output, edge_directions)
-    call hysteresis(output)
 
+    if (present(is_canny) .and. is_canny) then
+      call non_maximun_supperssion(output, edge_directions)
+      call hysteresis(output)
+    end if
+
+    deallocate(edge_directions)
   end subroutine sobel
 
-!   subroutine canny_edge_detection(img, output, )
-!   implicit none
+  subroutine canny_edge_detection(img, output)
+  !!! apply canny edge detection 
+  !!! the method is 
+  !!! 1. apply gaussian filtering 
+  !!! 2. apply sobel filtering
+  !!! 3. non-maximum supperssion
+  !!! 4. edge tracking by hysteresis
+  !!! 
+  !!! inputs:
+  !!!   img(integer, 2D): image array
+  !!!   output(integer, 2D): output array
+    implicit none
+    integer, intent(in), dimension(:, :) :: img
+    integer, intent(inout), dimension(:, :):: output
 
-!   end subroutine canny_edge_detection
+    integer, allocatable, dimension(:, :) ::tmp
+    integer :: img_shape(2)
+
+    img_shape = shape(img)
+    allocate (tmp(img_shape(1), img_shape(2)))
+    call gaussian(img, tmp)
+    call sobel(tmp, output, is_canny=.true.)
+    deallocate (tmp)
+  end subroutine canny_edge_detection
 
   subroutine non_maximun_supperssion(edge_magnitudes, edge_ways)
     !!! Perform non-maximum_supperssin
@@ -210,7 +236,7 @@ contains
         end if
 
         if (edge_magnitudes(h, w) /= maxval(edges)) then
-        !   edge_magnitudes(h, w) = 0
+          !   edge_magnitudes(h, w) = 0
           tmp_image(h, w) = 0
         else
           tmp_image(h, w) = edge_magnitudes(h, w)
