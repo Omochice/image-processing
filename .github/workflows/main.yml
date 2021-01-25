@@ -1,0 +1,33 @@
+name: Fortran CI
+
+on: 
+  push: 
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/chechout@v2
+      - name: set up python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: install fprettify
+        run: pip install fprettify
+      - name: apply fpretify
+        run: fprettify -i 2 -r src/
+      
+      - name: commit formatted file
+        run: |
+          git config user.name = ${NAME}
+          git config user.email = ${EMAIL}
+          git add -u 
+          git commit -m "auto format by github actions"
+          git push origin main
+        env: 
+          NAME: "github action"
+          EMAIL: "h20ms419@hirosaki-u.ac.jp"
