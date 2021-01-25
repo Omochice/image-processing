@@ -61,7 +61,6 @@ program read_file
   call bilateral(tmp, output_img, 0.3)
   call display_img(transpose(output_img), pnm_type, img_depth)
 
-
 !   print *, "edge"
 !   call egrb(img_array, output_img, img_width, img_height, 1)
 !   call display_img(transpose(output_img), pnm_type, img_depth)
