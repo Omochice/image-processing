@@ -12,7 +12,7 @@ pnm_tools.o:
 	$(FC) $(@:.o=.f90) -c -o $@
 
 filtering.o: queue.o
-	$(FC) $(@:.o=.f90) $< -c -o $@
+	$(FC) $(@:.o=.f90) -c -o $@
 
 queue.o:
 	$(FC) $(@:.o=.f08) -c -o $@
