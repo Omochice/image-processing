@@ -42,23 +42,20 @@ program read_file
 !   call laplacian(img_array, output_img)
 !   call display_img(transpose(output_img), pnm_type, img_depth)
 
-!   print *, "gaussian"
-!   call gaussian(img_array, output_img)
-!   call display_img(transpose(output_img), pnm_type, img_depth)
+  print *, "gaussian"
+  call gaussian(img_array, output_img, n_times=1)
+  call display_img(transpose(output_img), pnm_type, img_depth)
 
 !   print *, "sobel"
   print *, "canny edge detection"
 !   call egsb2(output_img, workspace, img_array, img_width, img_height, 1)
 !   call display_img(transpose(workspace), pnm_type, img_depth)
 
-!   call canny_edge_detection(output_img, tmp)
   call canny_edge_detection(img_array, output_img)
   call display_img(transpose(output_img), pnm_type, img_depth)
 
   print *, "bilateral"
-  call bilateral(img_array, output_img, 0.3)
-  call bilateral(output_img, tmp, 0.3)
-  call bilateral(tmp, output_img, 0.3)
+  call bilateral(img_array, output_img, 0.3, 3)
   call display_img(transpose(output_img), pnm_type, img_depth)
 
 !   print *, "edge"
