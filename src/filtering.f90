@@ -142,13 +142,16 @@ contains
                                                                 -2, 0, 2, &
                                                                 -1, 0, 1/), shape(kernel_y))
     integer :: width, height, w, h, d, img_shape(2)
-    real :: sx, sy
+    ! real :: sx, sy
+    real, allocatable, dimension(:, :) :: sx, sy
 
     img_shape = shape(img)
     height = img_shape(1)
     width = img_shape(2)
 
     allocate (edge_directions(height, width))
+    allocate (sx(height, width))
+    allocate (sy(height, width))
 
     if (present(depth)) then
       d = depth
@@ -160,16 +163,23 @@ contains
     edge_directions = 0.0
     do w = 2, width - 1
       do h = 2, height - 1
-        sx = sum(img(h - 1:h + 1, w - 1:w + 1)*kernel_x)
-        sy = sum(img(h - 1:h + 1, w - 1:w + 1)*kernel_y)
-        output(h, w) = max(0, min(d, int(sqrt(sx**2 + sy**2))))
-        if (sx == 0.0 .and. sy == 0.0) then
-          edge_directions = 0
-        else
-          edge_directions(h, w) = atan2(sy, sx)
-        end if
+        sx(h, w) = sum(img(h - 1:h + 1, w - 1:w + 1)*kernel_x)
+        sy(h, w) = sum(img(h - 1:h + 1, w - 1:w + 1)*kernel_y)
+        ! output(h, w) = max(0, min(d, int(sqrt(sx**2 + sy**2))))
+        ! if (sx == 0.0 .and. sy == 0.0) then
+        !   edge_directions = 0
+        ! else
+        !   edge_directions(h, w) = atan2(sy, sx)
+        ! end if
       end do
     end do
+
+    output = max(0, min(d, int(sqrt(sx**2 + sy**2))))
+    edge_directions = atan2(sy, sx) ! sx == 0 .and. sy == 0の処理がないけど動いている
+
+    deallocate (sx)
+    deallocate (sy)
+
     call fill_edge(output, 1)
 
     if (present(is_canny) .and. is_canny) then
