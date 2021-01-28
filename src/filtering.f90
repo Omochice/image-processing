@@ -74,17 +74,19 @@ contains
     call fill_edge(output, 1)
   end subroutine laplacian
 
-  subroutine gaussian(img, output, depth)
+  subroutine gaussian(img, output, depth, n_times)
   !!! gaussian filtering (24 neighborhood)
   !!! input:
   !!!   img(integer, 2D): array. have pix value.
   !!!   output(integer, 2D): array for output. same size as img.
-  !!!   depth(integer, aptional): max value of a pix. default to 255.
+  !!!   depth(integer, optional): max value of a pix. default to 255.
+  !!!   n_times(integer): number of time apply filter.
 
     implicit none
     integer, intent(in), dimension(:, :) :: img
     integer, intent(inout), dimension(:, :) ::  output
     integer, intent(in), optional :: depth
+    integer, intent(in) :: n_times
 
     integer, parameter, dimension(5, 5) :: filter = reshape((/1, 4, 6, 4, 1, &
                                                               4, 16, 24, 16, 4, &
@@ -92,7 +94,8 @@ contains
                                                               4, 16, 24, 16, 4, &
                                                               1, 4, 6, 4, 1/), shape(filter))
     integer, dimension(2) :: img_shape
-    integer :: w, h, width, height, d
+    integer, allocatable, dimension(:, :) :: tmp_img
+    integer :: w, h, width, height, d, n_time
 
     img_shape = shape(img)
     height = img_shape(1)
@@ -103,10 +106,16 @@ contains
       d = 255
     end if
 
-    do w = 3, width - 2
-      do h = 3, height - 2
-        output(h, w) = max(0, min(d, sum(img(h - 2:h + 2, w - 2:w + 2)*filter/256)), 0)
+    allocate (tmp_img(height, width))
+    tmp_img = img
+
+    do n_time = 1, n_times
+      do w = 3, width - 2
+        do h = 3, height - 2
+          output(h, w) = max(0, min(d, sum(tmp_img(h - 2:h + 2, w - 2:w + 2)*filter/256)), 0)
+        end do
       end do
+      tmp_img = output ! roll back
     end do
     call fill_edge(output, 2)
   end subroutine gaussian
@@ -191,7 +200,7 @@ contains
 
     img_shape = shape(img)
     allocate (tmp(img_shape(1), img_shape(2)))
-    call gaussian(img, tmp)
+    call gaussian(img, tmp, n_times=1)
     call sobel(tmp, output, is_canny=.true.)
     deallocate (tmp)
   end subroutine canny_edge_detection
@@ -298,20 +307,23 @@ contains
     end do
   end subroutine hysteresis
 
-  subroutine bilateral(img, output, sigma)
+  subroutine bilateral(img, output, sigma, n_times)
   !!! apply bilateral filter
   !!!
   !!! inputs:
   !!!   img(integer, 2D): image array.
   !!!   output(integer, 2D): ouput array.
   !!!   sigma(real): use in gaussian distribution.
+  !!!   n_times: number of time apply filter.
 
     implicit none
     integer, intent(in), dimension(:, :) :: img
     integer, intent(out), dimension(:, :) :: output
     real, intent(in) :: sigma
-    integer :: i, w, h, width, height, center, img_shape(2), window(5, 5)
+    integer, intent(in) :: n_times
+    integer :: i, w, h, width, height, center, img_shape(2), window(5, 5), n_time
     real :: gaussian_dist(0:255), tmp_array(25), weighted_filter(5, 5)
+    real, allocatable, dimension(:, :) :: tmp_img
     real, parameter, dimension(5, 5) :: filter = reshape((/1, 4, 6, 4, 1, &
                                                            4, 16, 24, 16, 4, &
                                                            6, 24, 36, 24, 6, &
@@ -323,20 +335,29 @@ contains
     width = img_shape(2)
 
     gaussian_dist = (/(exp(-(real(i)/255)**2/(2*sigma**2)), i=0, 255)/)
+    allocate (tmp_img(height, width))
 
-    do w = 3, width - 2
-      do h = 3, height - 2
-        window = img(h - 2:h + 2, w - 2:w + 2)
-        center = img(h, w)
-        tmp_array = reshape(abs(window - center), shape(tmp_array))
-        tmp_array = (/(gaussian_dist(int(tmp_array(i))), i=1, size(tmp_array))/)
-        weighted_filter = filter*reshape(tmp_array, shape(filter))
-        output(h, w) = max(0, min(255, &
-                                  nint(sum(window*weighted_filter)/sum(weighted_filter)) &
-                                  ))
+    tmp_img = real(img)
+
+    do n_time = 1, n_times
+
+      do w = 3, width - 2
+        do h = 3, height - 2
+          window = tmp_img(h - 2:h + 2, w - 2:w + 2)
+          center = tmp_img(h, w)
+          tmp_array = reshape(abs(window - center), shape(tmp_array))
+          tmp_array = (/(gaussian_dist(int(tmp_array(i))), i=1, size(tmp_array))/)
+          weighted_filter = filter*reshape(tmp_array, shape(filter))
+          output(h, w) = max(0, min(255, &
+                                    nint(sum(window*weighted_filter)/sum(weighted_filter)) &
+                                    ))
+        end do
       end do
+      tmp_img = output  ! 書き戻す
     end do
     call fill_edge(output, 2)
+    deallocate (tmp_img)
+
   end subroutine bilateral
 end module filtering
 
