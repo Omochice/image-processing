@@ -34,18 +34,33 @@ program read_file
 
   call display_img(transpose(img_array), pnm_type, img_depth)
 
-  call canny_edge_detection(img_array, tmp)
-  call bilateral(img_array, output_img, 0.3, 7)
+!   print *, "noise rejection"
+!   call ITEN1(img_array, output_img, output_img, img_width, img_height, 3)
+!   call display_img(transpose(output_img), pnm_type, img_depth)
 
-  do w = 1, img_width
-    do h = 1, img_height
-      if (tmp(h, w) == 255) then
-        output_img(h, w) = 0
-      end if
-    end do
-  end do
+  print *, "laplasian"
+! !   call lapf01(img_array, output_img, img_width, img_height, img_width, img_height)
+  call laplacian(img_array, output_img)
+  call display_img(transpose(output_img), pnm_type, img_depth)
+!
+  print *, "gaussian"
+  call gaussian(img_array, output_img, n_times=1)
+  call display_img(transpose(output_img), pnm_type, img_depth)
+!
+!   print *, "sobel"
+  print *, "canny edge detection"
+  call canny_edge_detection(img_array, output_img)
+  call display_img(transpose(output_img), pnm_type, img_depth)
+! !   call egsb2(output_img, workspace, img_array, img_width, img_height, 1)
+! !   call display_img(transpose(workspace), pnm_type, img_depth)
+!
+!
+  print *, "bilateral"
+  call bilateral(img_array, output_img, 0.3, 3)
+  call display_img(transpose(output_img), pnm_type, img_depth)
 
-  ! call display_img(transpose(output_img), pnm_type, img_depth)
-  call save_pnm(transpose(output), pnm_type, img_depth, filename(:len_trim(filename) - 4)//"birateral_with_edge.pgm")
+!   print *, "edge"
+!   call egrb(img_array, output_img, img_width, img_height, 1)
+!   call display_img(transpose(output_img), pnm_type, img_depth)
 
 end program

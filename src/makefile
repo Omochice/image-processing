@@ -17,5 +17,8 @@ filtering.o: queue.o
 queue.o:
 	$(FC) $(@:.o=.f08) -c -o $@
 
+preview: $(LIBS)
+	$(FC) $(LIBS) preview.f90 -o $@
+
 clean:
 	rm *.o run
