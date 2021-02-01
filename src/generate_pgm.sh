@@ -1,9 +1,11 @@
 function convert_pgm() {
     filename=$1
-    dst=${filename%.*}.pgm
-    command convert $filename -compress none .tmp.pgm
-    command sed "/^#\w*/d" .tmp.pgm >$dst
-    command rm .tmp.pgm
+    ext=".pgm"
+    dst=${filename%.*}$ext
+    tmp=".tmp"$ext
+    command convert $filename -compress none $tmp
+    command sed "/^#\w*/d" $tmp >$dst
+    command rm $tmp
 }
 
 for arg; do
