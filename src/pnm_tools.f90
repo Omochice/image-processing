@@ -56,7 +56,7 @@ contains
 
   subroutine save_pnm(img_array, maximum_value, filename)
     !!! Save array as pnm image.
-    !!\!
+    !!!
     !!! input:
     !!!   img_array (integer, 2D): image array. have pix value.
     !!!   maximum_value (integer): image maximum_value.
@@ -106,7 +106,7 @@ contains
 
   subroutine display_img(img, maximum_value)
     !!! Display array img.
-    !!! save array as pnm image named "output.pgm" then show via imagemagick.
+    !!! save array as pnm image named "output.pnm" then show via imagemagick.
     !!! input:
     !!!   img (integer, 2D): have pix value.
     !!!   maximum_value (integer): image maximum_value. ex. 255
