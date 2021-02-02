@@ -4,7 +4,7 @@ module filtering
   real(8), parameter :: PI = 4*atan(1.0_8)
 
 contains
-  recursive subroutine fill_edge(img, n_around)
+  pure recursive subroutine fill_edge(img, n_around)
     implicit none
     integer, intent(inout), dimension(:, :, :) :: img
     integer, intent(in) :: n_around
@@ -38,7 +38,7 @@ contains
     end do
   end subroutine fill_edge
 
-  function laplacian(img, maximum_value) result(output)
+  pure function laplacian(img, maximum_value) result(output)
   !!! laplacian filtering (8 neighborhood)
   !!! input:
   !!!   img(integer, 3D): array. have pix value.
@@ -72,7 +72,7 @@ contains
     call fill_edge(output, 1)
   end function laplacian
 
-  function gaussian(img, maximum_value, n_times) result(output)
+  pure function gaussian(img, maximum_value, n_times) result(output)
   !!! gaussian filtering (24 neighborhood)
   !!! input:
   !!!   img(integer, 3D): array. have pix value.
@@ -111,7 +111,7 @@ contains
           end do
         end do
       end do
-      tmp(:, :, :) = output(:, :, :) ! write back
+      tmp(:, :, :) = output(:, :, :)  ! write back
     end do
     call fill_edge(output, n_around=2)
 
@@ -162,7 +162,6 @@ contains
     end do
 
     output = min(maximum_value, max(0, int(sqrt(sx**2 + sy**2))))
-    print *, shape(output)
     edge_directions = atan2(sy, sx)*180/PI  ! sx == 0 .and. sy == 0の処理がないけど動いている
     deallocate (sx)
     deallocate (sy)
@@ -207,7 +206,7 @@ contains
     deallocate (tmp)
   end function canny_edge_detection
 
-  subroutine non_maximun_supperssion(edge_magnitudes, edge_ways)
+  pure subroutine non_maximun_supperssion(edge_magnitudes, edge_ways)
     !!! Perform non-maximum_supperssin
     !!!
     !!! inputs:
@@ -341,7 +340,7 @@ contains
     img = img/maximum_value*maximum_value
   end subroutine hysteresis
 
-  function bilateral(img, sigma, maximum_value, n_times) result(output)
+  pure function bilateral(img, sigma, maximum_value, n_times) result(output)
   !!! apply bilateral filter
   !!!
   !!! inputs:
