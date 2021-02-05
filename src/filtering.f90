@@ -4,6 +4,7 @@ module filtering
   real(8), parameter :: PI = 4*atan(1.0_8)
 
 contains
+
   pure recursive subroutine fill_edge(img, n_around)
     implicit none
     integer, intent(inout), dimension(:, :, :) :: img
@@ -393,4 +394,35 @@ contains
       tmp(:, :, :) = output(:, :, :)  ! write back
     end do
   end function bilateral
+
+  function emboss(img, maximum_value) result(filtered_img)
+    implicit none
+    integer, intent(in) :: img(:, :, :)
+    integer, intent(in) :: maximum_value
+
+    integer, allocatable :: filtered_img(:, :, :)
+    integer, parameter :: filter(3, 3) = reshape([-2, -1, 0, -1, 1, 1, 0, 1, 2], shape(filter))
+
+    integer :: depth, height, width, d, h, w, window(3, 3), img_shape(3)
+
+    img_shape = shape(img)
+    depth = img_shape(1)
+    height = img_shape(2)
+    width = img_shape(3)
+
+    allocate (filtered_img(depth, height, width))
+    filtered_img(:, :, :) = img(:, :, :)
+
+    do w = 2, width - 1
+      do h = 2, height - 1
+        do d = 1, depth
+          window = img(d, h - 1:h + 1, w - 1:w + 1)
+          filtered_img(d, h, w) = min(maximum_value, &
+                                      max(0, &
+                                          sum(window*filter)/sum(filter)))
+        end do
+      end do
+    end do
+
+  end function emboss
 end module filtering
