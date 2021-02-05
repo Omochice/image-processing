@@ -4,6 +4,49 @@ module filtering
   real(8), parameter :: PI = 4*atan(1.0_8)
 
 contains
+  pure function filtering_(img, filter, maximum_value, fill) result(filtered)
+    implicit none
+    integer, intent(in) :: img(:, :, :)
+    integer, intent(in) :: maximum_value
+    integer, intent(in) :: filter(:, :)
+    logical, intent(in), optional :: fill
+    integer, allocatable :: filtered(:, :, :)
+
+    integer :: depth, height, width, d, h, w, img_shape(3), filter_shape(2), dx, dy, sum_of_filter
+    integer, allocatable :: window(:, :)
+
+    img_shape = shape(img)
+    depth = img_shape(1)
+    height = img_shape(2)
+    width = img_shape(3)
+    allocate (filtered(depth, height, width))
+    filtered(:, :, :) = img(:, :, :)
+
+    filter_shape = shape(filter)
+    allocate (window(filter_shape(1), filter_shape(2)))
+
+    dx = filter_shape(2)/2
+    dy = filter_shape(1)/2
+    if (sum(filter) == 0) then
+      sum_of_filter = 1
+    else
+      sum_of_filter = sum(filter)
+    end if
+
+    do w = dx + 1, width - dx
+      do h = dy + 1, height - dy
+        do d = 1, depth
+          window = img(d, h - dy:h + dy, w - dx:w + dx)
+          filtered(d, h, w) = min(maximum_value, &
+                                  max(0, &
+                                      sum(window*filter)/sum_of_filter))
+        end do
+      end do
+    end do
+    if (present(fill) .and. fill) then
+      call fill_edge(filtered, n_around=dx)
+    end if
+  end function filtering_
 
   pure recursive subroutine fill_edge(img, n_around)
     implicit none
@@ -52,25 +95,7 @@ contains
     integer, parameter, dimension(3, 3) :: filter = reshape((/1, 1, 1, &
                                                               1, -8, 1, &
                                                               1, 1, 1/), shape(filter))
-    integer :: img_shape(3)
-    integer :: depth, height, width, d, h, w
-
-    img_shape = shape(img)
-    depth = img_shape(1)
-    height = img_shape(2)
-    width = img_shape(3)
-    allocate (output(depth, height, width))
-
-    do w = 2, width - 1
-      do h = 2, height - 1
-        do d = 1, depth
-          output(d, h, w) = min(maximum_value, &
-                                max(0, &
-                                    sum(img(d, h - 1:h + 1, w - 1:w + 1)*filter)))
-        end do
-      end do
-    end do
-    call fill_edge(output, 1)
+    output = filtering_(img, filter, maximum_value, fill=.true.)
   end function laplacian
 
   pure function gaussian(img, maximum_value, n_times) result(output)
@@ -84,35 +109,22 @@ contains
     integer, intent(in) :: img(:, :, :)
     integer, intent(in) :: maximum_value
     integer, intent(in) :: n_times
-    integer, allocatable :: output(:, :, :), tmp(:, :, :)
+    integer, allocatable :: output(:, :, :)
 
     integer, parameter, dimension(5, 5) :: filter = reshape((/1, 4, 6, 4, 1, &
                                                               4, 16, 24, 16, 4, &
                                                               6, 24, 36, 24, 6, &
                                                               4, 16, 24, 16, 4, &
                                                               1, 4, 6, 4, 1/), shape(filter))
-    integer :: img_shape(3), depth, height, width, d, h, w, n_time
+    integer :: img_shape(3), n_time
 
     img_shape = shape(img)
-    depth = img_shape(1)
-    height = img_shape(2)
-    width = img_shape(3)
-    allocate (output(depth, height, width))
-    allocate (tmp(depth, height, width))
+    allocate (output(img_shape(1), img_shape(2), img_shape(3)))
 
-    tmp(:, :, :) = img(:, :, :)
+    output(:, :, :) = img(:, :, :)
 
     do n_time = 1, n_times
-      do w = 3, width - 2
-        do h = 2, height - 2
-          do d = 1, depth
-            output(d, h, w) = min(maximum_value, &
-                                  max(0, &
-                                      sum(tmp(d, h - 2:h + 2, w - 2:w + 2)*filter/sum(filter))))
-          end do
-        end do
-      end do
-      tmp(:, :, :) = output(:, :, :)  ! write back
+      output = filtering_(output, filter, maximum_value, fill=.false.)
     end do
     call fill_edge(output, n_around=2)
 
@@ -263,17 +275,6 @@ contains
             edges = [edge_magnitudes(d, h + 1, w + 1), edge_magnitudes(d, h, w), edge_magnitudes(d, h - 1, w - 1)]
           end if
 
-          ! if ((way >= -1*PI/8 .and. way < PI/8) .or. (way < -7*PI/8 .or. way >= 7*PI/8)) then
-          !   edges = edge_magnitudes(d, h, w - 1:w + 1)
-          ! else if ((way >= PI/8 .and. way < 3*PI/8) .or. (way >= -7*PI/8 .and. way < -5*PI/8)) then
-          !   edges = (/edge_magnitudes(d, h + 1, w - 1), edge_magnitudes(d, h, w), edge_magnitudes(d, h - 1, w + 1)/)
-          ! else if ((way >= 3*PI/8 .and. way < 5*PI/8) .or. (way >= -5*PI/8 .and. way < -3*PI/8)) then
-          !   edges = edge_magnitudes(d, h - 1:h + 1, w)
-          ! else
-          !   edges = (/edge_magnitudes(d, h - 1, w - 1), edge_magnitudes(d, h, w), edge_magnitudes(d, h + 1, w + 1)/)
-          ! end if
-          !
-          ! if (edge_magnitudes(d, h, w) /= maxval(edges)) then
           if (edges(2) < edges(1) .or. edges(2) < edges(3)) then
             !   edge_magnitudes(h, w) = 0
             tmp_image(d, h, w) = 0
@@ -395,34 +396,16 @@ contains
     end do
   end function bilateral
 
-  function emboss(img, maximum_value) result(filtered_img)
+  pure function emboss(img, maximum_value) result(filtered_img)
     implicit none
     integer, intent(in) :: img(:, :, :)
     integer, intent(in) :: maximum_value
 
     integer, allocatable :: filtered_img(:, :, :)
-    integer, parameter :: filter(3, 3) = reshape([-2, -1, 0, -1, 1, 1, 0, 1, 2], shape(filter))
+    integer, parameter :: filter(3, 3) = reshape([-2, -1, 0, &
+                                                  -1, 1, 1, &
+                                                  0, 1, 2], shape(filter))
 
-    integer :: depth, height, width, d, h, w, window(3, 3), img_shape(3)
-
-    img_shape = shape(img)
-    depth = img_shape(1)
-    height = img_shape(2)
-    width = img_shape(3)
-
-    allocate (filtered_img(depth, height, width))
-    filtered_img(:, :, :) = img(:, :, :)
-
-    do w = 2, width - 1
-      do h = 2, height - 1
-        do d = 1, depth
-          window = img(d, h - 1:h + 1, w - 1:w + 1)
-          filtered_img(d, h, w) = min(maximum_value, &
-                                      max(0, &
-                                          sum(window*filter)/sum(filter)))
-        end do
-      end do
-    end do
-
+    filtered_img = filtering_(img, filter, maximum_value, fill=.false.)
   end function emboss
 end module filtering
