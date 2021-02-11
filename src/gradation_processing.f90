@@ -77,6 +77,7 @@ contains
                      max(0, &
                          translated + shift))
   end function brightness_translation
+
   pure function contrast_translation(img, maximum_value, K) result(translated)
     implicit none
     integer, intent(in) :: img(:, :, :)
@@ -103,4 +104,28 @@ contains
       end do
     end do
   end function contrast_translation
+
+  pure function gamma_correction(img, maximum_value, g) result(translated)
+    implicit none
+    integer, intent(in) :: img(:, :, :)
+    integer, intent(in) :: maximum_value
+    real, intent(in) :: g
+    integer, allocatable :: translated(:, :, :)
+    integer :: lut(0:maximum_value), img_shape(3), d, h, w, i
+
+    img_shape = shape(img)
+    allocate (translated(img_shape(1), img_shape(2), img_shape(3)))
+
+    do i = 0, maximum_value
+      lut(i) = int(maximum_value*(real(i)/maximum_value)**(1/g))
+    end do
+
+    do w = 1, img_shape(3)
+      do h = 1, img_shape(2)
+        do d = 1, img_shape(1)
+          translated(d, h, w) = lut(img(d, h, w))
+        end do
+      end do
+    end do
+  end function gamma_correction
 end module
