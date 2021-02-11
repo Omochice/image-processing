@@ -19,37 +19,40 @@ contains
   pure function linear_translation(img, maximum_value, low_threshold, high_threshold) result(translated)
     implicit none
     integer, intent(in) :: img(:, :, :)
-    integer, intent(inout), optional :: maximum_value, low_threshold, high_threshold
-    integer :: d, w, h, img_shape(3), i, v_max, v_min,
+    integer, intent(in), optional :: maximum_value, low_threshold, high_threshold
+    integer :: d, w, h, img_shape(3), i, v_max, v_min, m
     integer, allocatable :: lut(:), translated(:, :, :)
 
-    if (.not. present(maximum_value)) then
-      maximum_value = 255
+    if (present(maximum_value)) then
+      m = 255
+    else
+      m = maximum_value
     end if
     img_shape = shape(img)
     allocate (translated(img_shape(1), img_shape(2), img_shape(3)))
+    allocate (lut(0:maximum_value))
 
     do d = 1, img_shape(1)
       if (present(low_threshold)) then
         v_min = low_threshold
       else
-        v_min = min(img(d, :, :))
+        v_min = minval(img(d, :, :))
       end if
       if (present(high_threshold)) then
         v_max = high_threshold
       else
-        v_max = max(img(d, :, :))
+        v_max = maxval(img(d, :, :))
       end if
-      allocate (lut(v_min:v_max))
-      do i = v_min, v_max
-        lut(i) = ((i - v_min)/(v_max - v_min))*maximum_value
+      do i = 0, maximum_value
+        lut(i) = min(maximum_value, &
+                     max(0, &
+                         int(((real(i) - v_min)/(v_max - v_min))*maximum_value)))
       end do
       do w = 1, img_shape(3)
         do h = 1, img_shape(2)
           translated(d, h, w) = lut(img(d, h, w))
         end do
       end do
-      deallocate (lut)
     end do
   end function linear_translation
 
@@ -57,19 +60,47 @@ contains
     implicit none
     integer, intent(in) :: img(:, :, :)
     integer, intent(in) :: shift
-    integer, intent(inout), optional :: maximum_value
-    integer :: img_shape(3)
+    integer, intent(in), optional :: maximum_value
+    integer :: img_shape(3), m
     integer, allocatable :: translated(:, :, :)
 
-    if (.not. present(maximum_value)) then
-      maximum_value = 255
+    if (present(maximum_value)) then
+      m = maximum_value
+    else
+      m = 255
     end if
 
     img_shape = shape(img)
     translated = img
 
-    translated = min(maximum_value, &
+    translated = min(m, &
                      max(0, &
                          translated + shift))
   end function brightness_translation
+  pure function contrast_translation(img, maximum_value, K) result(translated)
+    implicit none
+    integer, intent(in) :: img(:, :, :)
+    integer, intent(in) :: maximum_value
+    real, intent(in) :: K
+    integer ::img_shape(3), d, h, w, i
+    integer, allocatable :: translated(:, :, :), lut(:)
+
+    allocate (lut(0:maximum_value))
+
+    do i = 0, maximum_value
+      lut(i) = min(maximum_value, &
+                   max(0, &
+                       int(K*(i - maximum_value/2) + maximum_value/2)))
+    end do
+
+    img_shape = shape(img)
+    allocate (translated(img_shape(1), img_shape(2), img_shape(3)))
+    do w = 1, img_shape(3)
+      do h = 1, img_shape(2)
+        do d = 1, img_shape(1)
+          translated(d, h, w) = lut(img(d, h, w))
+        end do
+      end do
+    end do
+  end function contrast_translation
 end module
