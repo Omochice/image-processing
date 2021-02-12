@@ -128,4 +128,29 @@ contains
       end do
     end do
   end function gamma_correction
+
+  pure function histogram_equalization(img, maximum_value) result(translated)
+    implicit none
+    integer, intent(in) :: img(:, :, :)
+    integer, intent(in) :: maximum_value
+    integer, allocatable :: translated(:, :, :), hist(:), layer(:, :)
+    integer :: d, h, w, img_shape(3), i
+
+    img_shape = shape(img)
+    allocate (translated(img_shape(1), img_shape(2), img_shape(3)))
+
+    do d = 1, img_shape(1)
+      layer = img(d, :, :)
+      hist = make_histogram(layer, maximum_value)
+      do i = 1, size(hist)
+        hist(i) = hist(i - 1) + hist(i)
+      end do
+      hist = int(hist*(maxval(layer)/real(img_shape(2)*img_shape(3))))
+      do w = 1, img_shape(3)
+        do h = 1, img_shape(2)
+          translated(d, h, w) = hist(img(d, h, w))
+        end do
+      end do
+    end do
+  end function histogram_equalization
 end module
