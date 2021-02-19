@@ -18,56 +18,55 @@ contains
 
   pure function to_binary(img, threshold) result(rst)
     implicit none
-    integer, intent(in) :: img(:, :)
+    integer, intent(in) :: img(:, :, :)
     integer, intent(in) :: threshold
-    integer, allocatable :: rst(:, :)
+    integer, allocatable :: rst(:, :, :)
 
     rst = img
-    where (img(:, :) >= threshold)
-      rst(:, :) = 1
+    where (img(1, :, :) >= threshold)
+      rst(1, :, :) = 1
     else where
-      rst(:, :) = 0
+      rst(1, :, :) = 0
     end where
   end function to_binary
 
   pure function otsu(img, maximum) result(rst)
     implicit none
-    integer, intent(in) :: img(:, :)
+    integer, intent(in) :: img(1, :, :)
     integer, intent(in) :: maximum
-    integer, allocatable :: rst(:, :), hist(:)
-    integer :: i, th, n1, n2, nums(0:maximum)
-    real :: ave1, ave2, sigma
-    real :: s_max(2)
+    integer, allocatable :: rst(1, :, :), hist(:)
+    integer :: i, th, nums(0:maximum)
+    real ::  n_pix_class1, n_pix_class2, ave_class1, ave_class2, varianse, thresold_to_variance(2)
 
     hist = make_histogram(img, maximum)
-    ! numsとs_maxを配列の宣言時に代入するのはエラーになる
+    ! numsとthresold_to_varianceを配列の宣言時に代入するのはエラーになる
     nums = [(i, i=0, maximum)]
-    s_max = [0, -10]
+    thresold_to_variance = [0, -10]
 
     do th = 0, maximum
-      n1 = sum(hist(:th))
-      n2 = sum(hist(th + 1:))
+      n_pix_class1 = real(sum(hist(:th)))
+      n_pix_class2 = real(sum(hist(th + 1:)))
 
-      if (n1 == 0) then
-        ave1 = 0
+      if (n_pix_class1 == 0) then
+        ave_class1 = 0
       else
-        ave1 = sum(hist(:th)*nums(:th))/real(n1)
+        ave_class1 = sum(hist(:th)*nums(:th))/n_pix_class1
       end if
 
-      if (n2 == 0) then
-        ave2 = 0
+      if (n_pix_class2 == 0) then
+        ave_class2 = 0
       else
-        ave2 = sum(hist(th + 1:)*nums(th + 1:))/real(n2)
+        ave_class2 = sum(hist(th + 1:)*nums(th + 1:))/n_pix_class2
       end if
 
-      sigma = n1*n2*(ave1 - ave2)**2
+      varianse = n_pix_class1*n_pix_class2*(ave_class1 - ave_class2)**2
 
-      if (sigma > s_max(2)) then
-        s_max = [real(th), sigma]
+      if (varianse > thresold_to_variance(2)) then
+        thresold_to_variance = [real(th), varianse]
       end if
     end do
 
-    rst = to_binary(img, int(s_max(1)))
+    rst = to_binary(img, int(thresold_to_variance(1)))
   end function otsu
 
 end module compressing
