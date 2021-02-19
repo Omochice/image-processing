@@ -1,4 +1,4 @@
-module compressing
+module posterization
   implicit none
 
 contains
@@ -69,4 +69,4 @@ contains
     rst = to_binary(img, int(thresold_to_variance(1)))
   end function otsu
 
-end module compressing
+end module posterization
