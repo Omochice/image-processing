@@ -32,13 +32,13 @@ contains
 
   pure function otsu(img, maximum) result(rst)
     implicit none
-    integer, intent(in) :: img(1, :, :)
+    integer, intent(in) :: img(:, :, :)
     integer, intent(in) :: maximum
-    integer, allocatable :: rst(1, :, :), hist(:)
+    integer, allocatable :: rst(:, :, :), hist(:)
     integer :: i, th, nums(0:maximum)
     real ::  n_pix_class1, n_pix_class2, ave_class1, ave_class2, varianse, thresold_to_variance(2)
 
-    hist = make_histogram(img, maximum)
+    hist = make_histogram(img(1, :, :), maximum)
     ! numsとthresold_to_varianceを配列の宣言時に代入するのはエラーになる
     nums = [(i, i=0, maximum)]
     thresold_to_variance = [0, -10]
@@ -68,5 +68,61 @@ contains
 
     rst = to_binary(img, int(thresold_to_variance(1)))
   end function otsu
+
+  pure function quantize(img, n_split, maximum) result(rst)
+    implicit none
+    integer, intent(in) :: img(:, :, :)
+    integer, intent(in) :: n_split
+    integer, intent(in), optional :: maximum
+    integer, allocatable :: rst(:, :, :)
+    integer :: m
+
+    if (present(maximum)) then
+      m = maximum
+    else
+      m = 255
+    end if
+
+    rst = img/(m/n_split + 1)
+  end function quantize
+
+  pure function dither(img, maximum) result(rst)
+    implicit none
+    integer, intent(in) :: img(:, :, :)
+    integer, intent(in) :: maximum
+    integer, allocatable :: rst(:, :, :)
+    integer :: dither_filter(4, 4)
+    integer :: height, width, h, w, h_range(2), w_range(2), dh, dw, img_shape(3)
+    integer, allocatable :: targets(:, :)
+
+    dither_mtx = reshape([0, 12, 3, 15, &
+                          8, 4, 11, 7, &
+                          2, 14, 1, 13, &
+                          10, 6, 9, 5]*((maximum + 1)/16), shape(dither_mtx))
+    img_shape = shape(img)
+    height = img_shape(2)
+    width = img_shape(3)
+    allocate (rst(1, height, width))
+
+    do w = 0, ceiling(width/4.0)
+      do h = 0, ceiling(height/4.0)
+        h_range = [h*4 + 1, min(height, (h + 1)*4)]
+        w_range = [w*4 + 1, min(width, (w + 1)*4)]
+
+        targets = img(1, h_range(1):h_range(2), w_range(1):w_range(2))
+        do concurrent(dh=1:h_range(2) - h_range(1) + 1, dw=1:w_range(2) - w_range(1) + 1)
+          block
+            if (dither_mtx(dh, dw) > targets(dh, dw)) then
+              targets(dh, dw) = 0
+            else
+              targets(dh, dw) = 1
+            end if
+          end block
+        end do
+        rst(1, h_range(1):h_range(2), w_range(1):w_range(2)) = targets
+      end do
+    end do
+
+  end function dither
 
 end module posterization
