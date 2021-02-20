@@ -91,7 +91,7 @@ contains
     integer, intent(in) :: img(:, :, :)
     integer, intent(in) :: maximum
     integer, allocatable :: rst(:, :, :)
-    integer :: dither_filter(4, 4)
+    integer :: dither_mtx(4, 4)
     integer :: height, width, h, w, h_range(2), w_range(2), dh, dw, img_shape(3)
     integer, allocatable :: targets(:, :)
 
