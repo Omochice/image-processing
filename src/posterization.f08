@@ -34,38 +34,44 @@ contains
     integer, intent(in) :: img(:, :, :)
     integer, intent(in) :: maximum
     integer, allocatable :: rst(:, :, :), hist(:)
-    integer :: i, th, nums(0:maximum)
-    real ::  n_pix_class1, n_pix_class2, ave_class1, ave_class2, varianse, thresold_to_variance(2)
+    integer :: i, th, best_th, rescale_rate
+    real :: ave_class1, ave_class2, nums(0:maximum), var, best_var, &
+            n_pix_class1, n_pix_class2
 
     hist = make_histogram(img(1, :, :), maximum)
-    ! numsとthresold_to_varianceを配列の宣言時に代入するのはエラーになる
-    nums = [(i, i=0, maximum)]
-    thresold_to_variance = [0, -10]
+    rescale_rate = size(img)**0.5
+    ! numsとthresold_to_varを配列の宣言時に代入するのはエラーになる
+    nums = [(real(i), i=0, maximum)]
+    best_th = 0
+    best_var = -1.0
 
-    do th = 0, maximum
-      n_pix_class1 = real(sum(hist(:th)))
-      n_pix_class2 = real(sum(hist(th + 1:)))
+    do concurrent(th=0:maximum)
+      block
+        n_pix_class1 = sum(hist(:th))/rescale_rate
+        n_pix_class2 = sum(hist(th + 1:))/rescale_rate
 
-      if (n_pix_class1 == 0) then
-        ave_class1 = 0
-      else
-        ave_class1 = sum(hist(:th)*nums(:th))/n_pix_class1
-      end if
+        if (n_pix_class1 == 0) then
+          ave_class1 = 0
+        else
+          ave_class1 = sum(hist(:th)*nums(:th))/n_pix_class1/rescale_rate
+        end if
 
-      if (n_pix_class2 == 0) then
-        ave_class2 = 0
-      else
-        ave_class2 = sum(hist(th + 1:)*nums(th + 1:))/n_pix_class2
-      end if
+        if (n_pix_class2 == 0) then
+          ave_class2 = 0
+        else
+          ave_class2 = sum(hist(th + 1:)*nums(th + 1:))/n_pix_class2/rescale_rate
+        end if
 
-      varianse = n_pix_class1*n_pix_class2*(ave_class1 - ave_class2)**2
+        var = n_pix_class1*n_pix_class2*((ave_class1 - ave_class2)**2)
 
-      if (varianse > thresold_to_variance(2)) then
-        thresold_to_variance = [real(th), varianse]
-      end if
+        if (var > best_var) then
+          best_th = th
+          best_var = var
+        end if
+      end block
     end do
 
-    rst = to_binary(img, int(thresold_to_variance(1)))
+    rst = to_binary(img, best_th)
   end function otsu
 
   pure function quantize(img, n_split, maximum) result(rst)
