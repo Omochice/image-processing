@@ -6,13 +6,12 @@ contains
     implicit none
     integer, intent(in) :: layer(:, :)
     integer, intent(in) :: maximum
-    integer :: hist(0:maximum), layer_shape(2), h, w
+    integer :: hist(0:maximum), i
     hist = 0
-    layer_shape = shape(layer)
-    do w = 1, layer_shape(2)
-      do h = 1, layer_shape(1)
-        hist(layer(h, w)) = hist(layer(h, w)) + 1
-      end do
+    do concurrent(i=0:maximum)
+      block
+        hist(i) = count(layer == i)
+      end block
     end do
   end function make_histogram
 
