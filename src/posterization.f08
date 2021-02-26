@@ -74,6 +74,49 @@ contains
     rst = to_binary(img, best_th)
   end function otsu
 
+  pure function adaptive_threshold(img, maximum, kernel_size) result(rst)
+    implicit none
+    integer, intent(in) :: img(:, :, :)
+    integer, intent(in) :: maximum
+    integer, intent(in), optional :: kernel_size
+    integer, allocatable :: rst(:, :, :), thresholds(:, :), row(:), column(:)
+    integer :: height, width, h, w, img_shape(3), s, dh, dw, i, k_size
+
+    if (present(kernel_size)) then
+      k_size = kernel_size
+    else
+      k_size = 15
+    end if
+
+    img_shape = shape(img)
+    height = img_shape(2)
+    width = img_shape(3)
+    allocate (thresholds(height, width))
+    allocate (rst(1, height, width))
+
+    do concurrent(w=1:width, h=1:height)
+      block
+        row = [(i, i=max(1, w - k_size/2), min(w + k_size/2, width))]
+        column = [(i, i=max(1, h - k_size/2), min(h + k_size/2, height))]
+        s = 0
+        do dw = 1, size(row)
+          do dh = 1, size(column)
+            s = s + img(1, column(dh), row(dw))
+          end do
+        end do
+        thresholds(h, w) = nint(s/real(size(row)*size(column)))
+        deallocate (row)
+        deallocate (column)
+      end block
+    end do
+
+    where (img(1, :, :) <= thresholds(:, :))
+      rst(1, :, :) = 0
+    else where
+      rst(1, :, :) = 1
+    end where
+  end function adaptive_threshold
+
   pure function quantize(img, n_split, maximum) result(rst)
     implicit none
     integer, intent(in) :: img(:, :, :)
@@ -130,4 +173,42 @@ contains
 
   end function dither
 
+  pure function error_diffusion(img, maximum) result(rst)
+    implicit none
+    integer, intent(in) :: img(:, :, :)
+    integer, intent(in) :: maximum
+    integer, allocatable :: rst(:, :, :)
+    integer :: height, width, h, w, img_shape(3), quant_error, replace_coords(4, 2), dh, dw, old, new, i
+    real :: dither_rates(4)
+
+    dither_rates = [7, 3, 5, 1]/16.0
+
+    img_shape = shape(img)
+    rst = img(1:1, :, :)
+
+    do w = 1, img_shape(3)
+      do h = 1, img_shape(2)
+        old = rst(1, h, w)
+        if (rst(1, h, w) >= (nint(maximum/2.0))) then
+          rst(1, h, w) = 1
+        else
+          rst(1, h, w) = 0
+        end if
+        new = rst(1, h, w)*maximum
+        quant_error = old - new
+        ! TODO
+        ! 列優先でループが回るので拡散を縦方向にしているのを修正する
+        replace_coords = reshape([[h + 1, h - 1, h, h + 1], [w, w + 1, w + 1, w + 1]], shape(replace_coords))
+        do concurrent(i=1:4)
+          block
+            dh = replace_coords(i, 1)
+            dw = replace_coords(i, 2)
+            if (dh > 0 .and. dh <= img_shape(2) .and. dw > 0 .and. dw <= img_shape(3)) then
+              rst(1, dh, dw) = rst(1, dh, dw) + nint(dither_rates(i)*quant_error)
+            end if
+          end block
+        end do
+      end do
+    end do
+  end function error_diffusion
 end module posterization
