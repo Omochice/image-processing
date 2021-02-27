@@ -33,4 +33,5 @@ program preview
   call display_img(quantize(img, 8, maximum_value), 8)
   call display_img(dither(img, maximum_value), 1)
   call display_img(error_diffusion(img, maximum_value), 1)
+  call display_img(rgb_to_gray(img), maximum_value)
 end program preview

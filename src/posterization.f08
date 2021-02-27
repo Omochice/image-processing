@@ -211,4 +211,18 @@ contains
       end do
     end do
   end function error_diffusion
+
+  pure function rgb_to_gray(img) result(rst)
+    implicit none
+    integer, intent(in) :: img(:, :, :)
+    integer, allocatable :: rst(:, :, :)
+    integer :: h, w, img_shape(3)
+    img_shape = shape(img)
+    allocate (rst(1, img_shape(2), img_shape(3)))
+
+    do concurrent(h=1:img_shape(2), w=1:img_shape(3))
+      rst(1, h, w) = 2989*img(1, h, w) + 5870*img(2, h, w) + 1140*img(3, h, w)
+    end do
+    rst = nint(rst/10000.0)
+  end function rgb_to_gray
 end module posterization
