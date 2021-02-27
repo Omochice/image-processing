@@ -46,7 +46,7 @@ contains
       do i = 0, maximum_value
         lut(i) = min(maximum_value, &
                      max(0, &
-                         anint(((real(i) - v_min)/(v_max - v_min))*maximum_value)))
+                         nint(((real(i) - v_min)/(v_max - v_min))*maximum_value)))
       end do
       do w = 1, img_shape(3)
         do h = 1, img_shape(2)
@@ -91,7 +91,7 @@ contains
     do i = 0, maximum_value
       lut(i) = min(maximum_value, &
                    max(0, &
-                       anint(K*(i - maximum_value/2) + maximum_value/2)))
+                       nint(K*(i - maximum_value/2) + maximum_value/2)))
     end do
 
     img_shape = shape(img)
@@ -117,7 +117,7 @@ contains
     allocate (translated(img_shape(1), img_shape(2), img_shape(3)))
 
     do i = 0, maximum_value
-      lut(i) = anint(maximum_value*(real(i)/maximum_value)**(1/g))
+      lut(i) = nint(maximum_value*(real(i)/maximum_value)**(1/g))
     end do
 
     do w = 1, img_shape(3)
@@ -145,7 +145,7 @@ contains
       do i = 1, size(hist)
         hist(i) = hist(i - 1) + hist(i)
       end do
-      hist = anint(hist*(maxval(layer)/real(img_shape(2)*img_shape(3))))
+      hist = nint(hist*(maxval(layer)/real(img_shape(2)*img_shape(3))))
       do w = 1, img_shape(3)
         do h = 1, img_shape(2)
           translated(d, h, w) = hist(img(d, h, w))
