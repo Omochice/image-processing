@@ -25,6 +25,9 @@ posterization.o: posterization.f08
 gradation_processing.o: gradation_processing.f90
 	$(FC) $+ -c
 
+generate-pnm:
+	bash generate_pnm.sh ../img/*.bmp
+
 all: clean preview
 
 clean:

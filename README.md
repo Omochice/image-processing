@@ -1,27 +1,47 @@
 # Image processing
 
-プロジェクトルート直下に`lips`が置かれることを前提としています。
-それらの`make`が終わったのちに以下を実行してください。
+Simple image processing by fortran.
 
+## Hoo to use
+
+```console
+$ git clone (this repository)
+$ cd image image-processing/src
+$ make
+$ make generate-pnm 
+$ ./preview ../img/Lenna.pnm
 ```
-$ cd src
-$ bash get-queue.sh
-$ bash generate_pgm ../img/*.bmp
-$ make 
-$ ./run <処理したい画像(例えば../img/Lenna.pgm)> 
-```
 
+## Modules 
 
-## 内容物
+### pnm_tools
 
-`src`以下のものについて記述する。
+* `load_pnm`
+* `save_pnm`
+* `display_img`
 
-* `pnm_tools.f90`
-    * 処理後の画像の表示やpgmでの書き出しを行うmodule
-* `filtering.f90`
-    * 画像にフィルタリングを行うサブルーチンを集めたmodule
-    * 現在実装済みは以下の通り
-        * gaussianフィルタ
-        * sobelフィルタ
-        * canny edge detection
-        * bilateralフィルタ
+### filtering
+
+* `laplacian`
+* `gaussian`
+* `sobel`
+* `canny_edge_detection`
+* `bilateral`
+* `emboss`
+
+### gradation_processing
+
+* `linear_translation`
+* `brightness_translation`
+* `contrast_translation`
+* `gamma_correction`
+* `histogram_equalization`
+
+### posterization
+
+* `to_binary`
+* `otsu`
+* `adaptive_threshold`
+* `quantize`
+* `dither`
+* `error_diffusion`

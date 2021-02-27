@@ -1,6 +1,6 @@
-function convert_pgm() {
+function convert_pnm() {
     filename=$1
-    ext=".pgm"
+    ext=".pnm"
     dst=${filename%.*}$ext
     tmp=".tmp"$ext
     command convert $filename -compress none $tmp
@@ -9,5 +9,5 @@ function convert_pgm() {
 }
 
 for arg; do
-    convert_pgm $arg
+    convert_pnm $arg
 done
