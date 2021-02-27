@@ -2,7 +2,7 @@
 
 Simple image processing by fortran.
 
-## Hoo to use
+## How to use
 
 ```console
 $ git clone (this repository)
