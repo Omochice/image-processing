@@ -4,8 +4,8 @@ FC = gfortran
 # SP = ../lips/spider.a
 LIBS = pnm_tools.o filtering.o queue.o posterization.o gradation_processing.o
 
-main: run.f90 $(LIBS)
-	$(FC) $+ -o run 
+preview: preview.f90 $(LIBS)
+	$(FC) $+ -o $@
 
 pnm_tools.o: pnm_tools.f90
 	$(FC) $+ -c
@@ -25,10 +25,7 @@ posterization.o: posterization.f08
 gradation_processing.o: gradation_processing.f90
 	$(FC) $+ -c
 
-preview: $(LIBS)
-	$(FC) $(LIBS) preview.f90 -o $@
-
-all: clean main
+all: clean preview
 
 clean:
-	rm *.o *.mod run
+	rm *.o *.mod preview
