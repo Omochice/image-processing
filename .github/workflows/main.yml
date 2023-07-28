@@ -21,14 +21,5 @@ jobs:
       - name: apply fprettify
         run: fprettify -i 2 -r src/
 
-      - id: diff
-        run: echo "::set-output name=changed::$(git diff | wc -l)"
-
-      - name: commit formatted file
-        if: ${{ steps.diff.outputs.changed != '0' }}
-        run: |
-          git config user.name = "github-actions"
-          git config user.email = "github-actions[bot]@users.noreply.github.com"
-          git add -u
-          git commit -m "auto format by github actions" --allow-empty
-          git push origin ${{ steps.extract_branch.outputs.BRANCH_NAME  }}
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
