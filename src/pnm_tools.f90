@@ -3,16 +3,14 @@ module pnm_tools
 
 contains
   function load_pnm(filename) result(img_array)
-    !!! load_pnm
-    !!!
-    !!!   input:
-    !!!     filename(character): input filename.
-    !!!   output:
-    !!!     img_array(integer, 3D): image array.
-    !!!                             even if the image is grayscale/monochrome, the array is 3D.
+    !! Load pnm file
+
     implicit none
+    ! Arguments
     character(*), intent(in) :: filename
+        !! The input filename
     integer, allocatable, dimension(:, :, :) :: img_array
+        !! Loaded image pixel array
     character(len=2) :: pnm_type
     integer :: i, j
     integer :: width, height, max_value, n_layer
@@ -55,17 +53,16 @@ contains
   end function load_pnm
 
   subroutine save_pnm(img_array, maximum_value, filename)
-    !!! Save array as pnm image.
-    !!!
-    !!! input:
-    !!!   img_array (integer, 2D): image array. have pix value.
-    !!!   maximum_value (integer): image maximum_value.
-    !!!   filename (character): use as the filename of saved image.
-
+    !! Save array as pnm image.
     implicit none
+
+    ! Arguments
     integer, dimension(:, :, :), intent(in) :: img_array
+      !! image array. have pix values.
     character(len=*), intent(in) :: filename
+      !! use as the fileame of saved image.
     integer, intent(in) :: maximum_value
+      !! image maximum value.
     character(len=2) :: header
     integer :: width, height, n_layer
     integer :: i, j
@@ -105,15 +102,14 @@ contains
   end subroutine save_pnm
 
   subroutine display_img(img, maximum_value)
-    !!! Display array img.
-    !!! save array as pnm image named "output.pnm" then show via imagemagick.
-    !!! input:
-    !!!   img (integer, 2D): have pix value.
-    !!!   maximum_value (integer): image maximum_value. ex. 255
-
+    !! Display array img.
+    !! save array as pnm image named "output.pnm" then show via imagemagick.
     implicit none
+
     integer, dimension(:, :, :), intent(in) :: img
+      !! image array, has pixel values.
     integer, intent(in) :: maximum_value
+      !! image maximum_value.
 
     call save_pnm(img, maximum_value, "output.pnm")
     call system("display output.pnm")

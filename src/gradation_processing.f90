@@ -2,10 +2,15 @@ module gradation_processing
   implicit none
 contains
   pure function make_histogram(layer, maximum_number) result(hist)
+    !! Make magnitude histogram
     implicit none
+
     integer, intent(in) :: layer(:, :)
+      !! The layer of image.
     integer, intent(in) :: maximum_number
+      !! The max value of pixel.
     integer :: hist(0:maximum_number), layer_shape(2), h, w
+      !! The magnitude histogram.
     hist = 0
 
     layer_shape = shape(layer)
@@ -17,11 +22,20 @@ contains
   end function make_histogram
 
   pure function linear_translation(img, maximum_value, low_threshold, high_threshold) result(translated)
+    !! Translate Linear
     implicit none
+
     integer, intent(in) :: img(:, :, :)
-    integer, intent(in), optional :: maximum_value, low_threshold, high_threshold
+      !! Image array has pixel values.
+    integer, intent(in), optional :: maximum_value
+      !! The max value of image pixel.
+    integer, intent(in), optional :: low_threshold
+      !! Threshold to cut min.
+    integer, intent(in), optional :: high_threshold
+      !! Threshold to cut max.
     integer :: d, w, h, img_shape(3), i, v_max, v_min, m
     integer, allocatable :: lut(:), translated(:, :, :)
+      !! The image applied linear transition.
 
     if (present(maximum_value)) then
       m = 255
@@ -57,12 +71,18 @@ contains
   end function linear_translation
 
   pure function brightness_translation(img, shift, maximum_value) result(translated)
+    !! Apply brightness transition
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array has pixel value.
     integer, intent(in) :: shift
+      !! Shift width.
     integer, intent(in), optional :: maximum_value
+      !! Max value to truncate. default to 255.
     integer :: img_shape(3), m
     integer, allocatable :: translated(:, :, :)
+      !! The image applied brightness transition.
 
     if (present(maximum_value)) then
       m = maximum_value
@@ -79,12 +99,18 @@ contains
   end function brightness_translation
 
   pure function contrast_translation(img, maximum_value, K) result(translated)
+    !! Apply contrast transition
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array has pixel value.
     integer, intent(in) :: maximum_value
+      !! Max value of image pixels.
     real, intent(in) :: K
+      !! K
     integer ::img_shape(3), d, h, w, i
     integer, allocatable :: translated(:, :, :), lut(:)
+      !! The image applied contrast transition.
 
     allocate (lut(0:maximum_value))
 
@@ -106,11 +132,17 @@ contains
   end function contrast_translation
 
   pure function gamma_correction(img, maximum_value, g) result(translated)
+    !! Apply gamma correction
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array has pixel values.
     integer, intent(in) :: maximum_value
+      !! The max value of pixels.
     real, intent(in) :: g
+      !! Gamma value.
     integer, allocatable :: translated(:, :, :)
+      !! The image applied gamma correction.
     integer :: lut(0:maximum_value), img_shape(3), d, h, w, i
 
     img_shape = shape(img)
@@ -130,10 +162,15 @@ contains
   end function gamma_correction
 
   pure function histogram_equalization(img, maximum_value) result(translated)
+    !! Apply histgram equalization
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array has pixel values.
     integer, intent(in) :: maximum_value
+      !! The max value of pixels.
     integer, allocatable :: translated(:, :, :), hist(:), layer(:, :)
+      !! The image applied histogram equalization.
     integer :: d, h, w, img_shape(3), i
 
     img_shape = shape(img)

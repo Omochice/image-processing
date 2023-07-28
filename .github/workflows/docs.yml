@@ -1,0 +1,42 @@
+name: Generate documenttion by FORD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - src/*
+      - README.md
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: set up python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+          check-latest: true
+      - name: install from requirements.txt
+        run: pip install -r requirements.txt
+      - name: generate documentation
+        run: ford README.md
+      - name: upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: doc
+
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2

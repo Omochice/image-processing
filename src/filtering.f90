@@ -5,21 +5,20 @@ module filtering
 
 contains
   pure function filtering_(img, filter, maximum_value, fill) result(filtered)
-    !!! apply filter
-    !!!
-    !!! inputs:
-    !!!   img(integer, 3D): image array.
-    !!!   filter(integer, 2D): filter.
-    !!!   maximum_value(integer): max pix value.
-    !!!   fill(logical, optional): if it is true, fill edge of the filtered image.
-    !!! outputs:
-    !!!   filterd(integer, 3D): filterd image. same size as the original image.
+    !! apply filter
     implicit none
+
+    !! Arguments
     integer, intent(in) :: img(:, :, :)
+      !! image array. has pixel values.
     integer, intent(in) :: maximum_value
+      !! max pixel value.
     integer, intent(in) :: filter(:, :)
+      !! filter array.
     logical, intent(in), optional :: fill
+      !! Whether does fill edge.
     integer, allocatable :: filtered(:, :, :)
+      !! filtered image. same size as the argument img.
 
     integer :: depth, height, width, d, h, w, img_shape(3), filter_shape(2), dx, dy, sum_of_filter
     integer, allocatable :: window(:, :)
@@ -58,14 +57,13 @@ contains
   end function filtering_
 
   pure recursive subroutine fill_edge(img, n_around)
-    !!! fill edges with the same color as closest pix.
-    !!!
-    !!! inputs:
-    !!!   img(integer, 3D): image array.
-    !!!   n_around(integer): the pix of fill edge.
+    !! fill edges with the same color as closest pix.
     implicit none
+
     integer, intent(inout), dimension(:, :, :) :: img
+      !! image array. has pixel values.
     integer, intent(in) :: n_around
+      !! The pix of fill edge.
     integer :: img_shape(3)
     integer :: depth, width, height, d, w, h
 
@@ -97,17 +95,15 @@ contains
   end subroutine fill_edge
 
   pure function laplacian(img, maximum_value) result(output)
-    !!! laplacian filtering (8 neighborhood)
-    !!!
-    !!! inputs
-    !!!   img(integer, 3D): array. have pix value.
-    !!!   maximum_value(integer): max value of a pix. default to 255.
-    !!! outputs:
-    !!!   output(integer, 3D): filterd image.
+    !! laplacian filtering (8 neighborhood)
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array. has pixel values.
     integer, intent(in) :: maximum_value
+      !! max value of a pix. default to 255.
     integer, allocatable :: output(:, :, :)
+      !! filtered image array.
     integer, parameter, dimension(3, 3) :: filter = reshape((/1, 1, 1, &
                                                               1, -8, 1, &
                                                               1, 1, 1/), shape(filter))
@@ -115,19 +111,17 @@ contains
   end function laplacian
 
   pure function gaussian(img, maximum_value, n_times) result(output)
-    !!! gaussian filtering (24 neighborhood)
-    !!!
-    !!! inputs:
-    !!!   img(integer, 3D): array. have pix value.
-    !!!   maximum_value(integer, optional): max value of a pix. default to 255.
-    !!!   n_times(integer): number of time apply filter.
-    !!! outputs:
-    !!!   output(integer, 3D): filterd image.
+    !! gaussian filtering (24 neighborhood)
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array has pixel values.
     integer, intent(in) :: maximum_value
+      !! Max value of a pix. default to 255.
     integer, intent(in) :: n_times
+      !! Number of time apply filter.
     integer, allocatable :: output(:, :, :)
+      !! Filtered image array.
 
     integer, parameter, dimension(5, 5) :: filter = reshape((/1, 4, 6, 4, 1, &
                                                               4, 16, 24, 16, 4, &
@@ -149,19 +143,17 @@ contains
   end function gaussian
 
   function sobel(img, maximum_value, is_canny) result(output)
-    !!! sobel filter (sqrt version)
-    !!!
-    !!! inputs:
-    !!!   img(integer, 3D): input image.
-    !!!   maximum_value(integer, optional): max value of a pix. default to 255
-    !!!   is_canny(logocal, optional): is used in canny adge detection
-    !!! outputs:
-    !!!   output(integer, 3D): filterd image
+    !! sobel filter (sqrt version)
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array has pixel values.
     integer, intent(in) :: maximum_value
+      !! Max value of a pix. default to 255
     logical, intent(in), optional :: is_canny
+      !! Whether is used in canny adge detection
     integer, allocatable :: output(:, :, :)
+      !! Filtered image array
     real, allocatable :: edge_directions(:, :, :)
     integer, parameter, dimension(3, 3) :: kernel_x = reshape((/-1, -2, -1, &
                                                                 0, 0, 0, &
@@ -208,22 +200,20 @@ contains
   end function sobel
 
   function canny_edge_detection(img, maximum_value) result(output)
-    !!! apply canny edge detection
-    !!! the method is
-    !!! 1. apply gaussian filtering
-    !!! 2. apply sobel filtering
-    !!! 3. non-maximum supperssion
-    !!! 4. edge tracking by hysteresis
-    !!!
-    !!! inputs:
-    !!!   img(integer, 2D): image array
-    !!!   maximum_value(integer): the max value of pix.
-    !!! outputs:
-    !!!   output(integer, 3D): edge array.
+    !! apply canny edge detection <br/>
+    !! the method is: <br/>
+    !! 1. apply gaussian filtering <br/>
+    !! 2. apply sobel filtering <br/>
+    !! 3. non-maximum supperssion <br/>
+    !! 4. edge tracking by hysteresis <br/>
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array has pixel values.
     integer, intent(in) :: maximum_value
+      !! The max value of pixel.
     integer, allocatable :: output(:, :, :)
+      !! Edge array
 
     integer, allocatable::tmp(:, :, :)
     integer :: depth, height, width, d, h, w, img_shape(3)
@@ -243,14 +233,13 @@ contains
   end function canny_edge_detection
 
   pure subroutine non_maximun_supperssion(edge_magnitudes, edge_ways)
-    !!! Perform non-maximum_supperssin
-    !!!
-    !!! inputs:
-    !!!   edge_magnitudes(integer, 2D): edge magnitude array
-    !!!   edge_ways(real, 2D): edge directions array
+    !! Perform non-maximum_supperssin
     implicit none
+
     integer, intent(inout) :: edge_magnitudes(:, :, :)
+      !! Edge magnitude array.
     real, intent(inout):: edge_ways(:, :, :)
+      !! Edge directions array
     integer, allocatable :: tmp_image(:, :, :)
     integer :: depth, width, height, d, w, h, img_shape(3)
     real :: way, edges(3)
@@ -310,14 +299,13 @@ contains
   end subroutine non_maximun_supperssion
 
   subroutine hysteresis(img, maximum_value)
-    !!! edge tracking by hysteresis
-    !!!
-    !!! inputs:
-    !!!   img(integer, 3D): image array.
-    !!    maximum_value(integer): the max value of pix.
+    !! Edge tracking by hysteresis
     implicit none
+
     integer, intent(inout) :: img(:, :, :)
+      !! Image array has pixel value.
     integer, intent(in) :: maximum_value
+      !! The max value of pixel.
     type(t_queue) :: queue
     integer :: depth, height, width, d, h, w, low_threshold, high_threshold, img_shape(3), dw, dh
 
@@ -370,21 +358,19 @@ contains
   end subroutine hysteresis
 
   pure function bilateral(img, sigma, maximum_value, n_times) result(output)
-    !!! apply bilateral filter
-    !!!
-    !!! inputs:
-    !!!   img(integer, 3D): image array.
-    !!!   sigma(real): use in gaussian distribution.
-    !!!   maximum_value: the max value of pix.
-    !!!   n_times: number of time apply filter.
-    !!! outputs:
-    !!!   output(integer, 3D): filterd image.
+    !! apply bilateral filter
     implicit none
+
     integer, intent(in):: img(:, :, :)
+      !! Image array has pixel values.
     real, intent(in) :: sigma
+      !! use in gaussian distribution.
     integer, intent(in) :: maximum_value
+      !! The max value of pixel.
     integer, intent(in) :: n_times
+      !! Number of time to apply filter.
     integer, allocatable :: output(:, :, :)
+      !! The image applied bilateral filter.
     integer :: depth, height, width, d, h, w, img_shape(3), n_time, i
     real :: gaussian_dist(0:255**2), tmp_array(25), weighted_filter(5, 5), window(5, 5), center
     real, allocatable :: tmp(:, :, :)
@@ -426,16 +412,16 @@ contains
   end function bilateral
 
   pure function emboss(img, maximum_value) result(filtered_img)
-    !!! apply emboss filter
-    !!!
-    !!! inputs:
-    !!!   img(integer, 3D): image array.
-    !!!   maximum_value(integer): the max value of pix.
+    !! apply emboss filter
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array has pixel value.
     integer, intent(in) :: maximum_value
+      !! The max value of pixel.
 
     integer, allocatable :: filtered_img(:, :, :)
+      !! The image applied emboss filter.
     integer, parameter :: filter(3, 3) = reshape([-2, -1, 0, &
                                                   -1, 1, 1, &
                                                   0, 1, 2], shape(filter))
