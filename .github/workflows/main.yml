@@ -2,6 +2,10 @@ name: Fortran auto format
 
 on:
   push:
+    branches:
+      - main
+    paths:
+      - src
 
 jobs:
   build:
