@@ -3,10 +3,14 @@ module posterization
 
 contains
   pure function make_histogram(layer, maximum) result(hist)
+    !! Make histogram
     implicit none
     integer, intent(in) :: layer(:, :)
+      !! The layer of image.
     integer, intent(in) :: maximum
+      !! Max value of pixels.
     integer :: hist(0:maximum), i
+      !! Histgram array.
     hist = 0
     do concurrent(i=0:maximum)
       block
@@ -16,10 +20,15 @@ contains
   end function make_histogram
 
   pure function to_binary(img, threshold) result(rst)
+    !! Apply binarization
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array that has pixel values.
     integer, intent(in) :: threshold
+      !! Threshold
     integer, allocatable :: rst(:, :, :)
+      !! Image array that applied binarization.
 
     rst = img
     where (img(1, :, :) >= threshold)
@@ -30,10 +39,15 @@ contains
   end function to_binary
 
   pure function otsu(img, maximum) result(rst)
+    !! Applie binarization with ostu's method.
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array that has pixel values.
     integer, intent(in) :: maximum
+      !! Max pixel value.
     integer, allocatable :: rst(:, :, :), hist(:)
+      !! Image Array that applied binarization.
     integer :: i, th, best_th, rescale_rate
     real :: ave_class1, ave_class2, nums(0:maximum), var, best_var, &
             n_pix_class1, n_pix_class2
@@ -75,11 +89,17 @@ contains
   end function otsu
 
   pure function adaptive_threshold(img, maximum, kernel_size) result(rst)
+    !! Applie adaptive threshold
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array that has pixel values.
     integer, intent(in) :: maximum
+      !! Max pixel value.
     integer, intent(in), optional :: kernel_size
+      !! Size of kernel.
     integer, allocatable :: rst(:, :, :), thresholds(:, :), row(:), column(:)
+      !! Image array that applied adaptive threshold.
     integer :: height, width, h, w, img_shape(3), s, dh, dw, i, k_size
 
     if (present(kernel_size)) then
@@ -118,11 +138,17 @@ contains
   end function adaptive_threshold
 
   pure function quantize(img, n_split, maximum) result(rst)
+    !! Apply quantize
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array that has pixel values.
     integer, intent(in) :: n_split
+      !! Number of split.
     integer, intent(in), optional :: maximum
+      !! Max value of pixels.
     integer, allocatable :: rst(:, :, :)
+      !! Image array that applied quantize.
     integer :: m
 
     if (present(maximum)) then
@@ -135,10 +161,16 @@ contains
   end function quantize
 
   pure function dither(img, maximum) result(rst)
+    !! Apply dither translation
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array that has pixel values.
     integer, intent(in) :: maximum
+      !! Max value of pixels.
     integer, allocatable :: rst(:, :, :)
+      !! Image array that applied dither.
+
     integer :: dither_mtx(4, 4)
     integer :: height, width, h, w, h_range(2), w_range(2), dh, dw, img_shape(3)
     integer, allocatable :: targets(:, :)
@@ -174,10 +206,15 @@ contains
   end function dither
 
   pure function error_diffusion(img, maximum) result(rst)
+    !! Apply error diffusion
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array that has pixel values.
     integer, intent(in) :: maximum
+      !! Max value of pixels.
     integer, allocatable :: rst(:, :, :)
+      !! Image array that applied error diffusion.
     integer :: height, width, h, w, img_shape(3), quant_error, replace_coords(4, 2), dh, dw, old, new, i
     real :: dither_rates(4)
 
@@ -213,9 +250,13 @@ contains
   end function error_diffusion
 
   pure function rgb_to_gray(img) result(rst)
+    !! Translate rbg image to grayscale image
     implicit none
+
     integer, intent(in) :: img(:, :, :)
+      !! Image array that has pixel values.
     integer, allocatable :: rst(:, :, :)
+      !! Translate image array.
     integer :: h, w, img_shape(3)
     img_shape = shape(img)
     allocate (rst(1, img_shape(2), img_shape(3)))
