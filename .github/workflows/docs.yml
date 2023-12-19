@@ -25,7 +25,7 @@ jobs:
       - name: generate documentation
         run: ford README.md
       - name: upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: doc
 
