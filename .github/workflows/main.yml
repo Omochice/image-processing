@@ -26,4 +26,4 @@ jobs:
         run: fprettify -i 2 -r src/
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v6
