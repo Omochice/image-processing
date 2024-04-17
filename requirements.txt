@@ -1,2 +1,0 @@
-FORD==7.0.5
-fprettify==0.3.7
